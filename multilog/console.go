@@ -28,6 +28,8 @@ func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
 	level := fmt.Sprintf("[%s]", r.Level.String())
 
 	switch r.Level {
+	case slog.LevelTrace:
+		level = color.CyanString(level)
 	case slog.LevelDebug:
 		level = color.MagentaString(level)
 	case slog.LevelInfo:
