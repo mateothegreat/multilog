@@ -4,7 +4,7 @@ This package provides the ability to use multiple logging output methods.
 
 🚀 Included loggers:
 
-* Console ![alt text](<CleanShot 2024-07-04 at 19.28.48.png>)
+* Console ![alt text](<CleanShot 2024-07-04 at 19.28.48.png>) ![alt text](image.png)
 
 * Elasticsearch ![alt text](<CleanShot 2024-07-04 at 19.03.19.png>)
 
