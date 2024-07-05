@@ -2,7 +2,11 @@
 
 This package provides the ability to use multiple logging output methods.
 
-![alt text](<CleanShot 2024-07-04 at 19.28.48.png>)
+Included loggers:
+
+* Console ![alt text](<CleanShot 2024-07-04 at 19.28.48.png>)
+
+* Elasticsearch ![alt text](<CleanShot 2024-07-04 at 19.03.19.png>)
 
 ## Installing
 
@@ -74,5 +78,3 @@ func main() {
 	})
 }
 ```
-
-![alt text](<CleanShot 2024-07-04 at 19.03.19.png>)
