@@ -1,9 +1,7 @@
-package logging
+package multilog
 
 import (
 	"sync"
-
-	"github.com/mateothegreat/go-multilog/logging/types"
 )
 
 // Debug logs a debug message to all registered loggers at the DEBUG level.
@@ -18,11 +16,11 @@ import (
 //   - v: The data to log
 func Debug(group string, message string, v any) {
 	wg := sync.WaitGroup{}
-	for _, logger := range types.Loggers {
+	for _, logger := range Loggers {
 		wg.Add(1)
-		go func(logger *types.CustomLogger) {
+		go func(logger *CustomLogger) {
 			defer wg.Done()
-			logger.Log(types.DEBUG, group, message, v)
+			logger.Log(DEBUG, group, message, v)
 		}(logger)
 	}
 	wg.Wait()
@@ -40,11 +38,11 @@ func Debug(group string, message string, v any) {
 //   - v: The data to log
 func Info(group string, message string, v any) {
 	wg := sync.WaitGroup{}
-	for _, logger := range types.Loggers {
+	for _, logger := range Loggers {
 		wg.Add(1)
-		go func(logger *types.CustomLogger) {
+		go func(logger *CustomLogger) {
 			defer wg.Done()
-			logger.Log(types.INFO, group, message, v)
+			logger.Log(INFO, group, message, v)
 		}(logger)
 	}
 	wg.Wait()
@@ -62,11 +60,11 @@ func Info(group string, message string, v any) {
 //   - v: The data to log
 func Warn(group string, message string, v any) {
 	wg := sync.WaitGroup{}
-	for _, logger := range types.Loggers {
+	for _, logger := range Loggers {
 		wg.Add(1)
-		go func(logger *types.CustomLogger) {
+		go func(logger *CustomLogger) {
 			defer wg.Done()
-			logger.Log(types.WARN, group, message, v)
+			logger.Log(WARN, group, message, v)
 		}(logger)
 	}
 	wg.Wait()
@@ -84,11 +82,11 @@ func Warn(group string, message string, v any) {
 //   - v: The data to log
 func Error(group string, message string, v any) {
 	wg := sync.WaitGroup{}
-	for _, logger := range types.Loggers {
+	for _, logger := range Loggers {
 		wg.Add(1)
-		go func(logger *types.CustomLogger) {
+		go func(logger *CustomLogger) {
 			defer wg.Done()
-			logger.Log(types.ERROR, group, message, v)
+			logger.Log(ERROR, group, message, v)
 		}(logger)
 	}
 	wg.Wait()

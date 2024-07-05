@@ -1,4 +1,4 @@
-package types
+package multilog
 
 // LogFn is a function type that defines the signature for logging functions.
 // It takes a log level, group name, message, and additional data as arguments.

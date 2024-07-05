@@ -1,4 +1,4 @@
-package loggers
+package multilog
 
 import (
 	"context"
@@ -10,11 +10,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/mateothegreat/go-multilog/logging/types"
 )
-
-// slogLogger is a global instance of the slog.Logger.
-var slogLogger = NewSlogLogger()
 
 // PrettyHandlerOptions defines options for the PrettyHandler.
 type PrettyHandlerOptions struct {
@@ -92,28 +88,28 @@ func (c *ConsoleLogger) Setup() {
 }
 
 // Log logs a message with the given log level, group, message, and additional data.
-func (c *ConsoleLogger) Log(level types.LogLevel, group string, message string, v any) {
+func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
 	logger := c.logger.With(slog.String("group", group))
 	switch level {
-	case types.DEBUG:
+	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)
 		} else {
 			log.Printf(color.CyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
-	case types.INFO:
+	case INFO:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
 			log.Printf(color.BlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
-	case types.WARN:
+	case WARN:
 		if c.args.Format == FormatJSON {
 			logger.Warn(message, "data", v)
 		} else {
 			log.Printf(color.YellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
-	case types.ERROR:
+	case ERROR:
 		if c.args.Format == FormatJSON {
 			logger.Error(message, "data", v)
 		} else {
@@ -143,12 +139,12 @@ type NewConsoleLoggerArgs struct {
 // NewConsoleLogger creates a new CustomLogger for console logging.
 //
 // Returns a new CustomLogger with the setup and log functions for console logging.
-func NewConsoleLogger(args *NewConsoleLoggerArgs) *types.CustomLogger {
+func NewConsoleLogger(args *NewConsoleLoggerArgs) *CustomLogger {
 	logger := &ConsoleLogger{
 		args: args,
 	}
 
-	return &types.CustomLogger{
+	return &CustomLogger{
 		Setup: logger.Setup,
 		Log:   logger.Log,
 	}

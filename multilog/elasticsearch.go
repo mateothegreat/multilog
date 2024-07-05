@@ -1,4 +1,4 @@
-package loggers
+package multilog
 
 import (
 	"bytes"
@@ -9,17 +9,16 @@ import (
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/mateothegreat/go-multilog/logging/types"
 )
 
 // ElasticsearchLog is the structure of the log that will be sent to the elasticsearch cluster.
 // Data can be any serializable type.
 type ElasticsearchLog struct {
-	Level   types.LogLevel `json:"level"`
-	Group   string         `json:"group"`
-	Message string         `json:"message"`
-	Data    any            `json:"data"`
-	Time    time.Time      `json:"time"`
+	Level   LogLevel  `json:"level"`
+	Group   string    `json:"group"`
+	Message string    `json:"message"`
+	Data    any       `json:"data"`
+	Time    time.Time `json:"time"`
 }
 
 // NewElasticsearchLoggerArgs are the arguments to create a new elasticsearch logger.
@@ -61,7 +60,7 @@ func (l *ElasticsearchLogger) Setup() {
 }
 
 // Log is the method to log a message to the elasticsearch cluster.
-func (l *ElasticsearchLogger) Log(level types.LogLevel, group string, message string, v any) {
+func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v any) {
 	data, err := json.Marshal(ElasticsearchLog{
 		Time:    time.Now(),
 		Level:   level,
@@ -86,13 +85,13 @@ func (l *ElasticsearchLogger) Log(level types.LogLevel, group string, message st
 //   - args <*NewElasticsearchLoggerArgs>: The arguments to create a new elasticsearch logger.
 //
 // Returns:
-//   - *types.CustomLogger: The custom logger.
-func NewElasticsearchLogger(args *NewElasticsearchLoggerArgs) *types.CustomLogger {
+//   - *CustomLogger: The custom logger.
+func NewElasticsearchLogger(args *NewElasticsearchLoggerArgs) *CustomLogger {
 	logger := &ElasticsearchLogger{
 		args: args,
 	}
 
-	return &types.CustomLogger{
+	return &CustomLogger{
 		Setup: logger.Setup,
 		Log:   logger.Log,
 	}

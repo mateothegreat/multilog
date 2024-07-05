@@ -1,18 +1,3 @@
-# logging with golang
-
-This package provides the ability to use multiple logging output methods.
-
-![alt text](<CleanShot 2024-07-04 at 19.28.48.png>)
-
-## Installing
-
-```bash
-go get -u github.com/mateothegreat/go-multilog
-```
-
-## Defining a custom logger
-
-```go
 package main
 
 import (
@@ -73,6 +58,3 @@ func main() {
 		Bar: 123,
 	})
 }
-```
-
-![alt text](<CleanShot 2024-07-04 at 19.03.19.png>)
