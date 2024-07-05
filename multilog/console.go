@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"regexp"
 
 	"github.com/fatih/color"
 )
@@ -80,18 +81,36 @@ func NewSlogLogger() *slog.Logger {
 
 // ConsoleLogger is a custom logger that uses slog.Logger.
 type ConsoleLogger struct {
-	args   *NewConsoleLoggerArgs
-	logger *slog.Logger // logger is the slog.Logger instance used for logging.
+	args           *NewConsoleLoggerArgs // args are the arguments for the NewConsoleLogger function.
+	logger         *slog.Logger          // logger is the slog.Logger instance used for logging.
+	filterPatterns []*regexp.Regexp      // filterPatterns are the regex patterns to filter out log messages.
 }
 
 // Setup initializes the CustomLogger by creating a new slog.Logger.
 func (c *ConsoleLogger) Setup() {
+	// Create a new slog.Logger.
 	c.logger = NewSlogLogger()
+	// Compile the filter drop patterns into regexp.Regexp instances.
+	for _, pattern := range c.args.FilterDropPatterns {
+		if pattern != nil {
+			c.filterPatterns = append(c.filterPatterns, regexp.MustCompile(*pattern))
+		}
+	}
 }
 
 // Log logs a message with the given log level, group, message, and additional data.
 func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
+	// Check if the message matches any of the filter drop patterns.
+	for _, pattern := range c.filterPatterns {
+		if pattern.MatchString(message) {
+			return
+		}
+	}
+
+	// Create a new slog.Logger with the group.
 	logger := c.logger.With(slog.String("group", group))
+
+	// Log the message with the given log level.
 	switch level {
 	case TRACE:
 		if c.args.Format == FormatJSON {
@@ -140,8 +159,12 @@ const (
 	FormatText Format = "text"
 )
 
+// NewConsoleLoggerArgs are the arguments for the NewConsoleLogger function.
 type NewConsoleLoggerArgs struct {
+	// Format is the format of the log that is output.
 	Format Format
+	// FilterDropPatterns is a slice of regex patterns to filter out log messages.
+	FilterDropPatterns []*string
 }
 
 // NewConsoleLogger creates a new CustomLogger for console logging.

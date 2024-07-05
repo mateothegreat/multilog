@@ -1,6 +1,7 @@
 package multilog
 
 import (
+	"os"
 	"sync"
 )
 
@@ -134,4 +135,5 @@ func Fatal(group string, message string, v any) {
 		}(logger)
 	}
 	wg.Wait()
+	os.Exit(1)
 }

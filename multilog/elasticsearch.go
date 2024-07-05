@@ -2,10 +2,9 @@ package multilog
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"log"
-	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -23,44 +22,79 @@ type ElasticsearchLog struct {
 
 // NewElasticsearchLoggerArgs are the arguments to create a new elasticsearch logger.
 type NewElasticsearchLoggerArgs struct {
-	// Addresses is the list of addresses to connect to the elasticsearch cluster.
-	Addresses []string
-	// Username is the username to use to connect to the elasticsearch cluster.
-	Username string
-	// Password is the password to use to connect to the elasticsearch cluster.
-	Password string
+	// Config is the configuration for the elasticsearch client. https://www.elastic.co/guide/en/elasticsearch/client/go-api/current/connecting.html
+	Config elasticsearch.Config
 	// Index is the index to use to send the logs to.
 	Index string
-	// InsecureSkipVerify is a flag to skip SSL certificate verification.
-	InsecureSkipVerify bool
+	// Mapping is the mapping for the index.
+	Mapping *string
+	// FilterDropPatterns is a slice of regex patterns to filter out log messages.
+	FilterDropPatterns []*string
 }
 
 // ElasticsearchLogger is the logger that sends logs to an elasticsearch cluster.
 type ElasticsearchLogger struct {
-	args   *NewElasticsearchLoggerArgs
-	client *elasticsearch.Client
+	args           *NewElasticsearchLoggerArgs
+	client         *elasticsearch.Client
+	filterPatterns []*regexp.Regexp
 }
 
 // Setup is the method to setup the elasticsearch logger.
 func (l *ElasticsearchLogger) Setup() {
-	client, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: l.args.Addresses,
-		Username:  l.args.Username,
-		Password:  l.args.Password,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: l.args.InsecureSkipVerify,
-			},
-		},
-	})
+	client, err := elasticsearch.NewClient(l.args.Config)
 	if err != nil {
 		log.Fatalf("error creating elasticsearch client: %s", err)
 	}
 	l.client = client
+
+	// Compile the filter patterns if provided.
+	for _, pattern := range l.args.FilterDropPatterns {
+		if pattern != nil {
+			compiledPattern, err := regexp.Compile(*pattern)
+			if err != nil {
+				log.Fatalf("error compiling filter pattern: %s", err)
+			}
+			l.filterPatterns = append(l.filterPatterns, compiledPattern)
+		}
+	}
+
+	// If the mapping is not provided, we assume that the index already exists.
+	if l.args.Mapping == nil {
+		// Check if the index already exists.
+		existsRes, err := l.client.Indices.Exists([]string{l.args.Index})
+		if err != nil {
+			log.Fatalf("error checking if index exists: %s", err)
+		}
+		defer existsRes.Body.Close()
+
+		// Index does not exist, create it.
+		if existsRes.StatusCode == 404 {
+			if l.args.Mapping != nil {
+				createRes, err := l.client.Indices.Create(l.args.Index, l.client.Indices.Create.WithBody(bytes.NewReader([]byte(*l.args.Mapping))))
+				if err != nil {
+					log.Fatalf("error creating index with mapping: %s", err)
+				}
+				defer createRes.Body.Close()
+
+				if createRes.IsError() {
+					log.Fatalf("error response from creating index: %s", createRes.String())
+				}
+			}
+		}
+	}
+
 }
 
 // Log is the method to log a message to the elasticsearch cluster.
 func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v any) {
+	// Check if the message matches any of the filter patterns.
+	for _, pattern := range l.filterPatterns {
+		if pattern.MatchString(message) {
+			log.Printf("dropping message due to filter pattern: %s", message)
+			return // Drop the message if it matches any of the filter patterns.
+		}
+	}
+
 	data, err := json.Marshal(ElasticsearchLog{
 		Time:    time.Now(),
 		Level:   level,
