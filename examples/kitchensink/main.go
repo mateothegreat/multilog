@@ -1,32 +1,3 @@
-# Multilog
-
-This package provides the ability to use multiple logging output methods simultaneously, drop messages selectively, and log structured data asynchronously.
-
-🚀 **Features**:
-* Multiple logging destinations.
-* Logger filtering individually.
-* Structured logging.
-* Log level filtering.
-* Create Elasticsearch indexes on the fly.
-
-🧑‍🏫 **Examples**
-* [Kitchensink](../examples/kitchensink/main.go)
-* [Drop filters](../examples/dropfilters/main.go)
-
-🥡 **Included Loggers**:
-
-* **Console** ![alt text](<CleanShot 2024-07-04 at 19.28.48.png>) ![alt text](image.png)
-* **Elasticsearch** ![ ](<CleanShot 2024-07-05 at 16.55.52.png>)![alt text](<CleanShot 2024-07-04 at 19.03.19.png>)
-
-## Installing
-
-```bash
-go get -u github.com/mateothegreat/go-multilog
-```
-
-## Defining a custom logger
-
-```go
 package main
 
 import (
@@ -125,4 +96,3 @@ func main() {
 	multilog.Trace("nobody_cares_about_this", "this message will get dropped by the filters", nil)
 	multilog.Error("block_this_group", "this message will get dropped by the filters", nil)
 }
-```

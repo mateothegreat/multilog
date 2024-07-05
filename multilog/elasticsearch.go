@@ -89,8 +89,7 @@ func (l *ElasticsearchLogger) Setup() {
 func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v any) {
 	// Check if the message matches any of the filter patterns.
 	for _, pattern := range l.filterPatterns {
-		if pattern.MatchString(message) {
-			log.Printf("dropping message due to filter pattern: %s", message)
+		if pattern.MatchString(group) || pattern.MatchString(message) {
 			return // Drop the message if it matches any of the filter patterns.
 		}
 	}

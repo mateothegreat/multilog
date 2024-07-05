@@ -102,7 +102,7 @@ func (c *ConsoleLogger) Setup() {
 func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
 	// Check if the message matches any of the filter drop patterns.
 	for _, pattern := range c.filterPatterns {
-		if pattern.MatchString(message) {
+		if pattern.MatchString(group) || pattern.MatchString(message) {
 			return
 		}
 	}
