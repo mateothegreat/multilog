@@ -23,14 +23,18 @@ type Logger interface {
 }
 
 const (
+	// TRACE represents the trace log level.
+	TRACE LogLevel = LogLevel(0)
 	// DEBUG represents the debug log level.
-	DEBUG LogLevel = LogLevel(0)
+	DEBUG LogLevel = LogLevel(1)
 	// INFO represents the info log level.
-	INFO LogLevel = LogLevel(1)
+	INFO LogLevel = LogLevel(2)
 	// WARN represents the warn log level.
-	WARN LogLevel = LogLevel(2)
+	WARN LogLevel = LogLevel(3)
 	// ERROR represents the error log level.
-	ERROR LogLevel = LogLevel(3)
+	ERROR LogLevel = LogLevel(4)
+	// FATAL represents the fatal log level.
+	FATAL LogLevel = LogLevel(5)
 )
 
 const (
