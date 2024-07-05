@@ -57,4 +57,8 @@ func main() {
 		Foo: "bad things happened bro",
 		Bar: 123,
 	})
+	multilog.Trace("my_package_name", "some verbose info..", CustomLogData{
+		Foo: "it's happpeeennning!!!",
+		Bar: 234234234,
+	})
 }

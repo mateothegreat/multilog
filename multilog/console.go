@@ -93,35 +93,41 @@ func (c *ConsoleLogger) Setup() {
 func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
 	logger := c.logger.With(slog.String("group", group))
 	switch level {
+	case TRACE:
+		if c.args.Format == FormatJSON {
+			logger.Debug(message, "data", v) // Assuming TRACE should be handled as DEBUG in slog
+		} else {
+			log.Printf(color.HiWhiteString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+		}
 	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)
 		} else {
-			log.Printf(color.CyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiCyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
 	case INFO:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.BlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
 	case WARN:
 		if c.args.Format == FormatJSON {
 			logger.Warn(message, "data", v)
 		} else {
-			log.Printf(color.YellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiYellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
 	case ERROR:
 		if c.args.Format == FormatJSON {
 			logger.Error(message, "data", v)
 		} else {
-			log.Printf(color.RedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiRedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
 	default:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.BlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
 		}
 	}
 }
