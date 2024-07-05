@@ -22,6 +22,8 @@ type ElasticsearchLog struct {
 
 // NewElasticsearchLoggerArgs are the arguments to create a new elasticsearch logger.
 type NewElasticsearchLoggerArgs struct {
+	// Level is the log level to use.
+	Level LogLevel
 	// Config is the configuration for the elasticsearch client. https://www.elastic.co/guide/en/elasticsearch/client/go-api/current/connecting.html
 	Config elasticsearch.Config
 	// Index is the index to use to send the logs to.
@@ -87,6 +89,11 @@ func (l *ElasticsearchLogger) Setup() {
 
 // Log is the method to log a message to the elasticsearch cluster.
 func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v any) {
+	// Check if the log level is sufficient to log the message.
+	if level < l.args.Level {
+		return // Drop the message if the log level is lower than the configured level.
+	}
+
 	// Check if the message matches any of the filter patterns.
 	for _, pattern := range l.filterPatterns {
 		if pattern.MatchString(group) || pattern.MatchString(message) {

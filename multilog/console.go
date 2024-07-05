@@ -100,6 +100,11 @@ func (c *ConsoleLogger) Setup() {
 
 // Log logs a message with the given log level, group, message, and additional data.
 func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
+	// Check if the log level is sufficient to log the message.
+	if level < c.args.Level {
+		return // Drop the message if the log level is lower than the configured level.
+	}
+
 	// Check if the message matches any of the filter drop patterns.
 	for _, pattern := range c.filterPatterns {
 		if pattern.MatchString(group) || pattern.MatchString(message) {
@@ -161,6 +166,8 @@ const (
 
 // NewConsoleLoggerArgs are the arguments for the NewConsoleLogger function.
 type NewConsoleLoggerArgs struct {
+	// Level is the log level to use.
+	Level LogLevel
 	// Format is the format of the log that is output.
 	Format Format
 	// FilterDropPatterns is a slice of regex patterns to filter out log messages.

@@ -16,6 +16,7 @@ type CustomLogData struct {
 
 func init() {
 	multilog.RegisterLogger(multilog.LogMethod("console"), multilog.NewConsoleLogger(&multilog.NewConsoleLoggerArgs{
+		Level:  multilog.TRACE,
 		Format: multilog.FormatText,
 		FilterDropPatterns: []*string{
 			multilog.PtrString("block_this_group"),
@@ -37,6 +38,7 @@ func init() {
 	}`
 
 	multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), multilog.NewElasticsearchLogger(&multilog.NewElasticsearchLoggerArgs{
+		Level: multilog.TRACE,
 		Config: elasticsearch.Config{
 			Addresses: []string{"https://localhost:9200"},
 			Username:  "elastic",
