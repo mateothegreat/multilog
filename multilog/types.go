@@ -2,7 +2,7 @@ package multilog
 
 // LogFn is a function type that defines the signature for logging functions.
 // It takes a log level, group name, message, and additional data as arguments.
-type LogFn func(level LogLevel, group string, message string, v any)
+type LogFn func(level LogLevel, group string, message string, v map[string]interface{})
 
 // LogMethod represents the method used for logging, such as console or elasticsearch.
 type LogMethod string

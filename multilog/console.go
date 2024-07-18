@@ -99,7 +99,7 @@ func (c *ConsoleLogger) Setup() {
 }
 
 // Log logs a message with the given log level, group, message, and additional data.
-func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any) {
+func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[string]interface{}) {
 	// Check if the log level is sufficient to log the message.
 	if level < c.args.Level {
 		return // Drop the message if the log level is lower than the configured level.
@@ -121,39 +121,47 @@ func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v any)
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v) // Assuming TRACE should be handled as DEBUG in slog
 		} else {
-			log.Printf(color.HiWhiteString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiWhiteString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)
 		} else {
-			log.Printf(color.HiCyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiCyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	case INFO:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	case WARN:
 		if c.args.Format == FormatJSON {
 			logger.Warn(message, "data", v)
 		} else {
-			log.Printf(color.HiYellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiYellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	case ERROR:
 		if c.args.Format == FormatJSON {
 			logger.Error(message, "data", v)
 		} else {
-			log.Printf(color.HiRedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiRedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	default:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), v)
+			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	}
+}
+
+func colorizeMap(v map[string]interface{}) map[string]interface{} {
+	colorizedMap := make(map[string]interface{})
+	for key, value := range v {
+		colorizedMap[color.HiBlueString(key)] = color.HiBlackString("%v", value)
+	}
+	return colorizedMap
 }
 
 // Format is the format of the log that is output.

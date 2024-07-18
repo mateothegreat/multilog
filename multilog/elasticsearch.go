@@ -88,7 +88,7 @@ func (l *ElasticsearchLogger) Setup() {
 }
 
 // Log is the method to log a message to the elasticsearch cluster.
-func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v any) {
+func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v map[string]interface{}) {
 	// Check if the log level is sufficient to log the message.
 	if level < l.args.Level {
 		return // Drop the message if the log level is lower than the configured level.

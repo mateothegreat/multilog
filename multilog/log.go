@@ -15,7 +15,7 @@ import (
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Trace(group string, message string, v any) {
+func Trace(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
@@ -37,7 +37,7 @@ func Trace(group string, message string, v any) {
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Debug(group string, message string, v any) {
+func Debug(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
@@ -59,7 +59,7 @@ func Debug(group string, message string, v any) {
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Info(group string, message string, v any) {
+func Info(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
@@ -81,7 +81,7 @@ func Info(group string, message string, v any) {
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Warn(group string, message string, v any) {
+func Warn(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
@@ -103,7 +103,7 @@ func Warn(group string, message string, v any) {
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Error(group string, message string, v any) {
+func Error(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
@@ -125,7 +125,7 @@ func Error(group string, message string, v any) {
 //   - group: The group name
 //   - message: The message to log
 //   - v: The data to log
-func Fatal(group string, message string, v any) {
+func Fatal(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range Loggers {
 		wg.Add(1)
