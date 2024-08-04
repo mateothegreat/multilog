@@ -29,8 +29,6 @@ func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
 	level := fmt.Sprintf("[%s]", r.Level.String())
 
 	switch r.Level {
-	case slog.LevelTrace:
-		level = color.CyanString(level)
 	case slog.LevelDebug:
 		level = color.MagentaString(level)
 	case slog.LevelInfo:
@@ -117,12 +115,6 @@ func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[
 
 	// Log the message with the given log level.
 	switch level {
-	case TRACE:
-		if c.args.Format == FormatJSON {
-			logger.Debug(message, "data", v) // Assuming TRACE should be handled as DEBUG in slog
-		} else {
-			log.Printf(color.HiWhiteString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
-		}
 	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)
