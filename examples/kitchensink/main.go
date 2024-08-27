@@ -90,7 +90,7 @@ func main() {
 		"bar": 123,
 	})
 
-	multilog.Trace("my_package_name", "some verbose info..", map[string]interface{}{
+	multilog.Info("my_package_name", "some verbose info..", map[string]interface{}{
 		"foo": "it's happpeeennning!!!",
 		"bar": 234234234,
 	})
