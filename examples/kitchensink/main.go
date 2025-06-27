@@ -1,11 +1,8 @@
 package main
 
 import (
-	"crypto/tls"
 	"log"
-	"net/http"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/mateothegreat/go-multilog/multilog"
 )
 
@@ -24,37 +21,37 @@ func init() {
 		},
 	}))
 
-	mapping := `
-	{
-		"mappings": {
-			"properties": {
-				"time": { "type": "date" },
-				"level": { "type": "keyword" },
-				"group": { "type": "keyword" },
-				"message": { "type": "text" },
-				"data": { "type": "object" }
-			}
-		}
-	}`
+	// mapping := `
+	// {
+	// 	"mappings": {
+	// 		"properties": {
+	// 			"time": { "type": "date" },
+	// 			"level": { "type": "keyword" },
+	// 			"group": { "type": "keyword" },
+	// 			"message": { "type": "text" },
+	// 			"data": { "type": "object" }
+	// 		}
+	// 	}
+	// }`
 
-	multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), multilog.NewElasticsearchLogger(&multilog.NewElasticsearchLoggerArgs{
-		Level: multilog.TRACE,
-		Config: elasticsearch.Config{
-			Addresses: []string{"https://localhost:9200"},
-			Username:  "elastic",
-			Password:  "elastic",
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-			},
-		},
-		Index:   "logs-3",
-		Mapping: &mapping,
-		FilterDropPatterns: []*string{
-			multilog.PtrString(".*drop.*"), // Drop any message that contains the word "drop"
-		},
-	}))
+	// multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), multilog.NewElasticsearchLogger(&multilog.NewElasticsearchLoggerArgs{
+	// 	Level: multilog.TRACE,
+	// 	Config: elasticsearch.Config{
+	// 		Addresses: []string{"https://localhost:9200"},
+	// 		Username:  "elastic",
+	// 		Password:  "elastic",
+	// 		Transport: &http.Transport{
+	// 			TLSClientConfig: &tls.Config{
+	// 				InsecureSkipVerify: true,
+	// 			},
+	// 		},
+	// 	},
+	// 	Index:   "logs-3",
+	// 	Mapping: &mapping,
+	// 	FilterDropPatterns: []*string{
+	// 		multilog.PtrString(".*drop.*"), // Drop any message that contains the word "drop"
+	// 	},
+	// }))
 
 	multilog.RegisterLogger(multilog.LogMethod("customerLogger1"), &multilog.CustomLogger{
 		Log: func(level multilog.LogLevel, group string, message string, v map[string]interface{}) {
@@ -93,6 +90,11 @@ func main() {
 	multilog.Info("my_package_name", "some verbose info..", map[string]interface{}{
 		"foo": "it's happpeeennning!!!",
 		"bar": 234234234,
+	})
+
+	multilog.Fatal("my_package_name", "this will crash", map[string]interface{}{
+		"foo": "boom",
+		"bar": 1234234234234,
 	})
 
 	multilog.Trace("nobody_cares_about_this", "this message will get dropped by the filters", nil)

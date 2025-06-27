@@ -139,11 +139,17 @@ func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[
 		} else {
 			log.Printf(color.HiRedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
+	case FATAL:
+		if c.args.Format == FormatJSON {
+			logger.Error(message, "data", v)
+		} else {
+			log.Printf(color.HiRedString("[FATAL]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+		}
 	default:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			log.Printf(color.HiBlueString("[UNKNOWN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
 		}
 	}
 }

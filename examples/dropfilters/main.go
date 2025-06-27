@@ -58,4 +58,5 @@ func init() {
 func main() {
 	multilog.Trace("nobody_cares_about_this", "this message will get dropped by the filters", nil)
 	multilog.Error("block_this_group", "this message will get dropped by the filters", nil)
+	multilog.Fatal("die", "this will crash", nil)
 }
