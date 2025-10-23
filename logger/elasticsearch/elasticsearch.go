@@ -1,4 +1,4 @@
-package multilog
+package elasticsearch
 
 import (
 	"bytes"
@@ -8,38 +8,8 @@ import (
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/mateothegreat/multilog"
 )
-
-// ElasticsearchLog is the structure of the log that will be sent to the elasticsearch cluster.
-// Data can be any serializable type.
-type ElasticsearchLog struct {
-	Level   LogLevel  `json:"level"`
-	Group   string    `json:"group"`
-	Message string    `json:"message"`
-	Data    any       `json:"data"`
-	Time    time.Time `json:"time"`
-}
-
-// NewElasticsearchLoggerArgs are the arguments to create a new elasticsearch logger.
-type NewElasticsearchLoggerArgs struct {
-	// Level is the log level to use.
-	Level LogLevel
-	// Config is the configuration for the elasticsearch client. https://www.elastic.co/guide/en/elasticsearch/client/go-api/current/connecting.html
-	Config elasticsearch.Config
-	// Index is the index to use to send the logs to.
-	Index string
-	// Mapping is the mapping for the index.
-	Mapping *string
-	// FilterDropPatterns is a slice of regex patterns to filter out log messages.
-	FilterDropPatterns []*string
-}
-
-// ElasticsearchLogger is the logger that sends logs to an elasticsearch cluster.
-type ElasticsearchLogger struct {
-	args           *NewElasticsearchLoggerArgs
-	client         *elasticsearch.Client
-	filterPatterns []*regexp.Regexp
-}
 
 // Setup is the method to setup the elasticsearch logger.
 func (l *ElasticsearchLogger) Setup() {
@@ -72,7 +42,8 @@ func (l *ElasticsearchLogger) Setup() {
 		// Index does not exist, create it.
 		if existsRes.StatusCode == 404 {
 			if l.args.Mapping != nil {
-				createRes, err := l.client.Indices.Create(l.args.Index, l.client.Indices.Create.WithBody(bytes.NewReader([]byte(*l.args.Mapping))))
+				createRes, err := l.client.Indices.Create(l.args.Index,
+					l.client.Indices.Create.WithBody(bytes.NewReader([]byte(*l.args.Mapping))))
 				if err != nil {
 					log.Fatalf("error creating index with mapping: %s", err)
 				}
@@ -87,7 +58,7 @@ func (l *ElasticsearchLogger) Setup() {
 }
 
 // Log is the method to log a message to the elasticsearch cluster.
-func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, v map[string]interface{}) {
+func (l *ElasticsearchLogger) Log(level multilog.LogLevel, group string, message string, v map[string]interface{}) {
 	// Check if the log level is sufficient to log the message.
 	if level < l.args.Level {
 		return // Drop the message if the log level is lower than the configured level.
@@ -125,12 +96,12 @@ func (l *ElasticsearchLogger) Log(level LogLevel, group string, message string, 
 //
 // Returns:
 //   - *CustomLogger: The custom logger.
-func NewElasticsearchLogger(args *NewElasticsearchLoggerArgs) *CustomLogger {
+func NewElasticsearchLogger(args *NewElasticsearchLoggerArgs) *multilog.CustomLogger {
 	logger := &ElasticsearchLogger{
 		args: args,
 	}
 
-	return &CustomLogger{
+	return &multilog.CustomLogger{
 		Setup: logger.Setup,
 		Log:   logger.Log,
 	}
