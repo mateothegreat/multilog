@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/mateothegreat/go-multilog/multilog"
+	"github.com/mateothegreat/multilog"
 )
 
 type CustomLogData struct {

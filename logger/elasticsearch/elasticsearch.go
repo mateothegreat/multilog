@@ -84,7 +84,6 @@ func (l *ElasticsearchLogger) Setup() {
 			}
 		}
 	}
-
 }
 
 // Log is the method to log a message to the elasticsearch cluster.
