@@ -1,6 +1,9 @@
 package multilog
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 // Loggers is a map of log methods to custom loggers.
 //
@@ -8,6 +11,9 @@ import "fmt"
 // It is not recommended to use this variable directly, but rather to use the functions
 // in the log package to register and retrieve loggers.
 var Loggers map[LogMethod]*CustomLogger = make(map[LogMethod]*CustomLogger)
+
+// loggersMu guards concurrent access to the Loggers map.
+var loggersMu sync.RWMutex
 
 // NewLogger creates a new logger for the given log method.
 //
@@ -20,6 +26,8 @@ var Loggers map[LogMethod]*CustomLogger = make(map[LogMethod]*CustomLogger)
 //     If a logger for the given log method is already registered, it is returned.
 //     Otherwise, a new logger is created and registered for the given log method.
 func NewLogger(t LogMethod) *CustomLogger {
+	loggersMu.Lock()
+	defer loggersMu.Unlock()
 	Loggers[t] = &CustomLogger{}
 	return Loggers[t]
 }
@@ -34,12 +42,15 @@ func NewLogger(t LogMethod) *CustomLogger {
 //   - `error` if the logger for the given log method is already registered.
 //   - `nil` if the logger for the given log method is successfully registered.
 func RegisterLogger(t LogMethod, logger *CustomLogger) error {
-	if _, exists := Loggers[t]; exists {
-		return fmt.Errorf("logger for log method %s already registered", t)
-	}
-
 	if logger.Setup != nil {
 		logger.Setup()
+	}
+
+	loggersMu.Lock()
+	defer loggersMu.Unlock()
+
+	if _, exists := Loggers[t]; exists {
+		return fmt.Errorf("logger for log method %s already registered", t)
 	}
 
 	Loggers[t] = logger

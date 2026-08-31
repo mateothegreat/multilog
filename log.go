@@ -3,7 +3,23 @@ package multilog
 import (
 	"os"
 	"sync"
+	"time"
 )
+
+// snapshotLoggers returns a copy of the currently registered loggers.
+//
+// The read lock is held only long enough to copy the logger references into
+// a local slice. Iteration happens after the lock is released so a logger
+// that re-registers (or logs recursively) cannot deadlock against the map.
+func snapshotLoggers() []*CustomLogger {
+	loggersMu.RLock()
+	defer loggersMu.RUnlock()
+	loggers := make([]*CustomLogger, 0, len(Loggers))
+	for _, logger := range Loggers {
+		loggers = append(loggers, logger)
+	}
+	return loggers
+}
 
 // Trace logs a trace message to all registered loggers at the TRACE level.
 //
@@ -17,7 +33,7 @@ import (
 //   - v: The data to log
 func Trace(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -39,7 +55,7 @@ func Trace(group string, message string, v map[string]interface{}) {
 //   - v: The data to log
 func Debug(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -61,7 +77,7 @@ func Debug(group string, message string, v map[string]interface{}) {
 //   - v: The data to log
 func Info(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -83,7 +99,7 @@ func Info(group string, message string, v map[string]interface{}) {
 //   - v: The data to log
 func Warn(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -105,7 +121,7 @@ func Warn(group string, message string, v map[string]interface{}) {
 //   - v: The data to log
 func Error(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -127,7 +143,7 @@ func Error(group string, message string, v map[string]interface{}) {
 //   - v: The data to log
 func Fatal(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
-	for _, logger := range Loggers {
+	for _, logger := range snapshotLoggers() {
 		wg.Add(1)
 		go func(logger *CustomLogger) {
 			defer wg.Done()
@@ -135,5 +151,12 @@ func Fatal(group string, message string, v map[string]interface{}) {
 		}(logger)
 	}
 	wg.Wait()
+
+	// Best-effort flush: give buffered logger backends (e.g. the async
+	// elasticsearch client) a brief window to drain their queues before the
+	// process exits. This is NOT a guarantee of delivery — os.Exit skips
+	// deferred functions and cannot wait on internal flush goroutines.
+	time.Sleep(100 * time.Millisecond)
+
 	os.Exit(1)
 }

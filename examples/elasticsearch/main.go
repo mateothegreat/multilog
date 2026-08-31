@@ -19,26 +19,13 @@ func init() {
 		},
 	}))
 
-	mapping := `
-	{
-		"mappings": {
-			"properties": {
-				"time": { "type": "date" },
-				"level": { "type": "keyword" },
-				"group": { "type": "keyword" },
-				"message": { "type": "text" },
-				"data": { "type": "object" }
-			}
-		}
-	}`
-
 	multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), elasticsearch.NewElasticsearchLogger(&elasticsearch.NewElasticsearchLoggerArgs{
 		Level: multilog.TRACE,
 		Config: elasticsearch.Config{
 			Addresses: []string{"https://localhost:9200"},
 		},
 		Index:   "logs-3",
-		Mapping: &mapping,
+		Mapping: elasticsearch.DefaultMapping,
 	}))
 }
 

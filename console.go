@@ -115,6 +115,13 @@ func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[
 
 	// Log the message with the given log level.
 	switch level {
+	case TRACE:
+		if c.args.Format == FormatJSON {
+			// slog has no native TRACE level below Debug; use Debug instead.
+			logger.Debug(message, "data", v)
+		} else {
+			log.Printf(color.HiMagentaString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+		}
 	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)

@@ -29,7 +29,7 @@ type NewElasticsearchLoggerArgs struct {
 	// Index is the index to use to send the logs to.
 	Index string
 	// Mapping is the mapping for the index.
-	Mapping *string
+	Mapping string
 	// FilterDropPatterns is a slice of regex patterns to filter out log messages.
 	FilterDropPatterns []*string
 }

@@ -18,8 +18,9 @@ type CustomLogger struct {
 
 // Logger is an interface that defines the methods required for a logger.
 type Logger interface {
-	Setup()                                                  // Setup initializes the logger.
-	Log(level LogLevel, group string, message string, v any) // Log logs a message with a given log level, group, message, and additional data.
+	Setup() // Setup initializes the logger.
+	// Log logs a message with a given log level, group, message, and additional data.
+	Log(level LogLevel, group string, message string, v map[string]interface{})
 }
 
 const (

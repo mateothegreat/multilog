@@ -21,22 +21,18 @@ func init() {
 		},
 	}))
 
-	// mapping := `
-	// {
-	// 	"mappings": {
-	// 		"properties": {
-	// 			"time": { "type": "date" },
-	// 			"level": { "type": "keyword" },
-	// 			"group": { "type": "keyword" },
-	// 			"message": { "type": "text" },
-	// 			"data": { "type": "object" }
-	// 		}
-	// 	}
-	// }`
-
-	// multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), multilog.NewElasticsearchLogger(&multilog.NewElasticsearchLoggerArgs{
+	// The elasticsearch logger lives in a separate submodule; import it as:
+	//
+	//	import (
+	//		"crypto/tls"
+	//		"net/http"
+	//
+	//		elasticsearch "github.com/mateothegreat/multilog/logger/elasticsearch"
+	//	)
+	//
+	// multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), elasticsearch.NewElasticsearchLogger(&elasticsearch.NewElasticsearchLoggerArgs{
 	// 	Level: multilog.TRACE,
-	// 	Config: elasticsearch.Config{
+	// 	Config: elasticsearch.Config{ // Alias for go-elasticsearch v8 Config.
 	// 		Addresses: []string{"https://localhost:9200"},
 	// 		Username:  "elastic",
 	// 		Password:  "elastic",
@@ -47,7 +43,7 @@ func init() {
 	// 		},
 	// 	},
 	// 	Index:   "logs-3",
-	// 	Mapping: &mapping,
+	// 	Mapping: elasticsearch.DefaultMapping, // Or a custom mapping string; "" creates the index without a mapping.
 	// 	FilterDropPatterns: []*string{
 	// 		multilog.PtrString(".*drop.*"), // Drop any message that contains the word "drop"
 	// 	},
