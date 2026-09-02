@@ -21,34 +21,6 @@ func init() {
 		},
 	}))
 
-	// The elasticsearch logger lives in a separate submodule; import it as:
-	//
-	//	import (
-	//		"crypto/tls"
-	//		"net/http"
-	//
-	//		elasticsearch "github.com/mateothegreat/multilog/logger/elasticsearch"
-	//	)
-	//
-	// multilog.RegisterLogger(multilog.LogMethod("elasticsearch"), elasticsearch.NewElasticsearchLogger(&elasticsearch.NewElasticsearchLoggerArgs{
-	// 	Level: multilog.TRACE,
-	// 	Config: elasticsearch.Config{ // Alias for go-elasticsearch v8 Config.
-	// 		Addresses: []string{"https://localhost:9200"},
-	// 		Username:  "elastic",
-	// 		Password:  "elastic",
-	// 		Transport: &http.Transport{
-	// 			TLSClientConfig: &tls.Config{
-	// 				InsecureSkipVerify: true,
-	// 			},
-	// 		},
-	// 	},
-	// 	Index:   "logs-3",
-	// 	Mapping: elasticsearch.DefaultMapping, // Or a custom mapping string; "" creates the index without a mapping.
-	// 	FilterDropPatterns: []*string{
-	// 		multilog.PtrString(".*drop.*"), // Drop any message that contains the word "drop"
-	// 	},
-	// }))
-
 	multilog.RegisterLogger(multilog.LogMethod("customerLogger1"), &multilog.CustomLogger{
 		Log: func(level multilog.LogLevel, group string, message string, v map[string]interface{}) {
 			log.Printf("logged via customerLogger1: %s: %s", group, message)

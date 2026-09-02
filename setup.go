@@ -28,11 +28,28 @@ var loggersMu sync.RWMutex
 func NewLogger(t LogMethod) *CustomLogger {
 	loggersMu.Lock()
 	defer loggersMu.Unlock()
+	if existing, ok := Loggers[t]; ok {
+		return existing
+	}
 	Loggers[t] = &CustomLogger{}
 	return Loggers[t]
 }
 
+// ResetLoggers removes all registered loggers.
+//
+// Intended for use in tests to reset global state between cases.
+// It must not be called concurrently with log calls.
+func ResetLoggers() {
+	loggersMu.Lock()
+	defer loggersMu.Unlock()
+	Loggers = make(map[LogMethod]*CustomLogger)
+}
+
 // RegisterLogger registers a custom logger for a given log method.
+//
+// Register loggers only from the main package's init() or main(). Library
+// packages must not register loggers in their own init() functions, as import
+// order is not guaranteed and duplicate registrations return an error.
 //
 // Arguments:
 //   - t: The log method to register a logger for.
@@ -40,19 +57,22 @@ func NewLogger(t LogMethod) *CustomLogger {
 //
 // Returns:
 //   - `error` if the logger for the given log method is already registered.
+//     The duplicate check happens before logger.Setup is run, so a failed
+//     registration has no side effects.
 //   - `nil` if the logger for the given log method is successfully registered.
+//     The logger is inserted into the Loggers map before logger.Setup runs,
+//     so a Setup that logs recursively will find its own logger registered.
 func RegisterLogger(t LogMethod, logger *CustomLogger) error {
+	loggersMu.Lock()
+	if _, exists := Loggers[t]; exists {
+		loggersMu.Unlock()
+		return fmt.Errorf("logger for log method %s already registered", t)
+	}
+	Loggers[t] = logger
+	loggersMu.Unlock()
+
 	if logger.Setup != nil {
 		logger.Setup()
 	}
-
-	loggersMu.Lock()
-	defer loggersMu.Unlock()
-
-	if _, exists := Loggers[t]; exists {
-		return fmt.Errorf("logger for log method %s already registered", t)
-	}
-
-	Loggers[t] = logger
 	return nil
 }

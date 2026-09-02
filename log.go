@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+// exitFn is called by Fatal after loggers complete. It is a variable so
+// tests can stub it out. Not safe to mutate concurrently with Fatal calls.
+var exitFn = os.Exit
+
 // snapshotLoggers returns a copy of the currently registered loggers.
 //
 // The read lock is held only long enough to copy the logger references into
@@ -30,7 +34,8 @@ func snapshotLoggers() []*CustomLogger {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Trace(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -52,7 +57,8 @@ func Trace(group string, message string, v map[string]interface{}) {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Debug(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -74,7 +80,8 @@ func Debug(group string, message string, v map[string]interface{}) {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Info(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -96,7 +103,8 @@ func Info(group string, message string, v map[string]interface{}) {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Warn(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -118,7 +126,8 @@ func Warn(group string, message string, v map[string]interface{}) {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Error(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -140,7 +149,8 @@ func Error(group string, message string, v map[string]interface{}) {
 //
 //   - group: The group name
 //   - message: The message to log
-//   - v: The data to log
+//   - v: The data to log (must not be mutated after the call; it is shared
+//     across logger goroutines)
 func Fatal(group string, message string, v map[string]interface{}) {
 	wg := sync.WaitGroup{}
 	for _, logger := range snapshotLoggers() {
@@ -158,5 +168,5 @@ func Fatal(group string, message string, v map[string]interface{}) {
 	// deferred functions and cannot wait on internal flush goroutines.
 	time.Sleep(100 * time.Millisecond)
 
-	os.Exit(1)
+	exitFn(1)
 }
