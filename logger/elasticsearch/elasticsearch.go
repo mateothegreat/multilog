@@ -75,8 +75,6 @@ func (l *ElasticsearchLogger) Setup() {
 				log.Fatalf("error response from creating index: %s", createRes.String())
 			}
 		}
-	} else {
-		log.Printf("index %q already exists", l.args.Index)
 	}
 }
 
