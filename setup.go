@@ -51,9 +51,21 @@ func ResetLoggers() {
 // packages must not register loggers in their own init() functions, as import
 // order is not guaranteed and duplicate registrations return an error.
 //
+// Pass With(...) after the logger to set defaults for every call to that
+// logger. You do not need With on each Info/Debug/etc. call:
+//
+//	multilog.RegisterLogger(multilog.LogMethod("console"),
+//	    multilog.NewConsoleLogger(args),
+//	    multilog.With(multilog.Expand))
+//	multilog.Info("api", "ready", data) // expanded on this logger
+//
+// Defaults apply only to loggers that implement LogWith. Existing two-argument
+// calls stay valid; the With scopes are optional.
+//
 // Arguments:
 //   - t: The log method to register a logger for.
 //   - logger: The custom logger to register.
+//   - with: Optional scopes from With. Their options are merged onto logger.Options.
 //
 // Returns:
 //   - `error` if the logger for the given log method is already registered.
@@ -62,7 +74,11 @@ func ResetLoggers() {
 //   - `nil` if the logger for the given log method is successfully registered.
 //     The logger is inserted into the Loggers map before logger.Setup runs,
 //     so a Setup that logs recursively will find its own logger registered.
-func RegisterLogger(t LogMethod, logger *CustomLogger) error {
+func RegisterLogger(t LogMethod, logger *CustomLogger, with ...Scope) error {
+	for _, scope := range with {
+		logger.Options = mergeOptions(logger.Options, scope.opts)
+	}
+
 	loggersMu.Lock()
 	if _, exists := Loggers[t]; exists {
 		loggersMu.Unlock()

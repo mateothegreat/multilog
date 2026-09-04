@@ -19,7 +19,7 @@ func init() {
 			multilog.PtrString("block_this_group"),
 			multilog.PtrString(".*drop.*"), // Drop any message that contains the word "drop"
 		},
-	}))
+	}), multilog.With(multilog.Expand))
 
 	multilog.RegisterLogger(multilog.LogMethod("customerLogger1"), &multilog.CustomLogger{
 		Log: func(level multilog.LogLevel, group string, message string, v map[string]interface{}) {
@@ -46,12 +46,12 @@ func main() {
 		"bar": 1,
 		"baz": "baz",
 	})
-	multilog.With(multilog.Expand).Warn("my_package_name", "it's about to explode...", map[string]interface{}{
+	multilog.Warn("my_package_name", "it's about to explode...", map[string]interface{}{
 		"foo": "boom",
 		"bar": 1234234234234,
 	})
 
-	multilog.With(multilog.Expand).Error("my_package_name", "some error!", map[string]interface{}{
+	multilog.Error("my_package_name", "some error!", map[string]interface{}{
 		"foo": "bad things happened bro",
 		"bar": 123,
 	})

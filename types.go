@@ -18,6 +18,10 @@ type CustomLogger struct {
 	// When it is set, emit prefers it over Log so options like Expand are honored.
 	// Custom loggers may leave it nil; they keep receiving calls through Log.
 	LogWith LogWithFn
+	// Options are defaults for this logger. RegisterLogger(..., With(Expand))
+	// sets them so every call expands without a per-call With. emit ORs these
+	// with the call's options before invoking LogWith.
+	Options Options
 }
 
 // LogWithFn is the signature for loggers that accept per-call options from With.

@@ -41,7 +41,7 @@ func emit(level LogLevel, group string, message string, v map[string]interface{}
 		go func(logger *CustomLogger) {
 			defer wg.Done()
 			if logger.LogWith != nil {
-				logger.LogWith(level, group, message, v, opts)
+				logger.LogWith(level, group, message, v, mergeOptions(logger.Options, opts))
 				return
 			}
 			if logger.Log != nil {
