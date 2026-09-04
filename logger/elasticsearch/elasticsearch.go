@@ -25,61 +25,100 @@ const DefaultMapping = `
 		}
 	}`
 
-// Setup is the method to setup the elasticsearch logger.
+// Setup initializes the Elasticsearch client and best-effort creates the
+// target index.
+//
+// Errors are logged and cause the logger to degrade to a no-op sink rather
+// than crashing the process. A telemetry sink must never take the application
+// down: an unreachable Elasticsearch during pod startup or a bad index mapping
+// is a monitoring problem, not a service problem, and killing the process
+// removes the operator's only remaining channel (stderr and other registered
+// loggers) for observing the outage.
+//
+// When the client cannot be constructed or the index cannot be verified, l.client
+// stays nil and Log becomes a no-op. Callers that need hard-fail behavior on
+// bad configuration should validate the config before calling Setup.
 func (l *ElasticsearchLogger) Setup() {
 	client, err := elasticsearch.NewClient(l.args.Config)
 	if err != nil {
-		log.Fatalf("error creating elasticsearch client: %s", err)
+		log.Printf("elasticsearch logger: could not create client, disabling sink: %s", err)
+		return
 	}
 	l.client = client
 
-	// Compile the filter patterns if provided.
+	// Compile the filter patterns if provided. A bad pattern is skipped
+	// rather than fatal: dropping a filter is safer than dropping the
+	// process, and the offending pattern is logged so the operator can fix
+	// it.
 	for _, pattern := range l.args.FilterDropPatterns {
-		if pattern != nil {
-			compiledPattern, err := regexp.Compile(*pattern)
-			if err != nil {
-				log.Fatalf("error compiling filter pattern: %s", err)
-			}
-			l.filterPatterns = append(l.filterPatterns, compiledPattern)
+		if pattern == nil {
+			continue
 		}
+		compiledPattern, err := regexp.Compile(*pattern)
+		if err != nil {
+			log.Printf("elasticsearch logger: skipping invalid filter pattern %q: %s", *pattern, err)
+			continue
+		}
+		l.filterPatterns = append(l.filterPatterns, compiledPattern)
 	}
 
-	// Check if the index already exists.
+	// Best-effort index bootstrap. A failure here (unreachable ES, missing
+	// permissions, DNS blip during startup) disables the sink but keeps the
+	// process running so other loggers still receive events.
 	existsRes, err := l.client.Indices.Exists([]string{l.args.Index})
 	if err != nil {
-		log.Fatalf("error checking if index exists: %s", err)
+		log.Printf("elasticsearch logger: could not check if index %q exists, disabling sink: %s", l.args.Index, err)
+		l.client = nil
+		return
 	}
 	defer existsRes.Body.Close()
 
-	// Index does not exist, create it.
-	if existsRes.StatusCode == 404 {
-		if l.args.Mapping != "" {
-			createRes, err := l.client.Indices.Create(l.args.Index,
-				l.client.Indices.Create.WithBody(bytes.NewReader([]byte(l.args.Mapping))))
-			if err != nil {
-				log.Fatalf("error creating index with mapping: %s", err)
-			}
-			defer createRes.Body.Close()
-
-			if createRes.IsError() {
-				log.Fatalf("error response from creating index: %s", createRes.String())
-			}
-		} else {
-			createRes, err := l.client.Indices.Create(l.args.Index)
-			if err != nil {
-				log.Fatalf("error creating index: %s", err)
-			}
-			defer createRes.Body.Close()
-
-			if createRes.IsError() {
-				log.Fatalf("error response from creating index: %s", createRes.String())
-			}
+	if existsRes.StatusCode != 404 {
+		return
+	}
+	if l.args.Mapping != "" {
+		createRes, err := l.client.Indices.Create(l.args.Index,
+			l.client.Indices.Create.WithBody(bytes.NewReader([]byte(l.args.Mapping))))
+		if err != nil {
+			log.Printf("elasticsearch logger: could not create index %q with mapping, disabling sink: %s", l.args.Index, err)
+			l.client = nil
+			return
 		}
+		defer createRes.Body.Close()
+		if createRes.IsError() {
+			log.Printf("elasticsearch logger: create index %q returned error, disabling sink: %s", l.args.Index, createRes.String())
+			l.client = nil
+			return
+		}
+		return
+	}
+	createRes, err := l.client.Indices.Create(l.args.Index)
+	if err != nil {
+		log.Printf("elasticsearch logger: could not create index %q, disabling sink: %s", l.args.Index, err)
+		l.client = nil
+		return
+	}
+	defer createRes.Body.Close()
+	if createRes.IsError() {
+		log.Printf("elasticsearch logger: create index %q returned error, disabling sink: %s", l.args.Index, createRes.String())
+		l.client = nil
 	}
 }
 
-// Log is the method to log a message to the elasticsearch cluster.
+// Log ships one message to Elasticsearch.
+//
+// Transport failures are logged to stderr and dropped: a logging sink must
+// never crash the process it observes. Prior versions called log.Fatalf on
+// any indexing error, which turned a network partition into an application
+// outage -- an app that logs "database unreachable" during a blip would kill
+// itself trying to record that fact.
+//
+// A nil client (Setup failed or the sink was disabled) drops the message
+// silently. The console logger, if registered alongside, still receives it.
 func (l *ElasticsearchLogger) Log(level multilog.LogLevel, group string, message string, v map[string]interface{}) {
+	if l.client == nil {
+		return
+	}
 	// Check if the log level is sufficient to log the message.
 	if level < l.args.Level {
 		return // Drop the message if the log level is lower than the configured level.
@@ -100,12 +139,14 @@ func (l *ElasticsearchLogger) Log(level multilog.LogLevel, group string, message
 		Data:    v,
 	})
 	if err != nil {
-		log.Fatalf("error marshalling document: %s", err)
+		log.Printf("elasticsearch logger: could not marshal document, dropping: %s", err)
+		return
 	}
 
 	res, err := l.client.Index(l.args.Index, bytes.NewReader(data))
 	if err != nil {
-		log.Fatalf("error indexing document: %s", err)
+		log.Printf("elasticsearch logger: could not index document, dropping: %s", err)
+		return
 	}
 	defer res.Body.Close()
 }
