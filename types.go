@@ -14,7 +14,14 @@ type LogLevel int
 type CustomLogger struct {
 	Setup func() // Setup is a function that initializes the custom logger.
 	Log   LogFn  // Log is a function that logs a message with a given log level, group, message, and additional data.
+	// LogWith is an optional function that receives per-call options from With.
+	// When it is set, emit prefers it over Log so options like Expand are honored.
+	// Custom loggers may leave it nil; they keep receiving calls through Log.
+	LogWith LogWithFn
 }
+
+// LogWithFn is the signature for loggers that accept per-call options from With.
+type LogWithFn func(level LogLevel, group string, message string, v map[string]interface{}, opts Options)
 
 // Logger is an interface that defines the methods required for a logger.
 type Logger interface {

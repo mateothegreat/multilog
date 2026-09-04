@@ -44,13 +44,14 @@ func main() {
 	multilog.Debug("my_package_name", "test", map[string]interface{}{
 		"foo": "foo",
 		"bar": 1,
+		"baz": "baz",
 	})
-	multilog.Warn("my_package_name", "it's about to explode...", map[string]interface{}{
+	multilog.With(multilog.Expand).Warn("my_package_name", "it's about to explode...", map[string]interface{}{
 		"foo": "boom",
 		"bar": 1234234234234,
 	})
 
-	multilog.Error("my_package_name", "some error!", map[string]interface{}{
+	multilog.With(multilog.Expand).Error("my_package_name", "some error!", map[string]interface{}{
 		"foo": "bad things happened bro",
 		"bar": 123,
 	})

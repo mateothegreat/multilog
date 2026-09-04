@@ -9,9 +9,19 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 )
+
+// fieldNameColor is a true mid-gray. color.HiBlack (ANSI 90) is "bright black"
+// and most themes map it to the default foreground or near-black, so keys never
+// look gray.
+var fieldNameColor = color.RGB(158, 158, 158)
+
+// fieldValueColor is bright white so values stay distinct from gray keys.
+var fieldValueColor = color.New(color.FgHiWhite)
 
 // PrettyHandlerOptions defines options for the PrettyHandler.
 type PrettyHandlerOptions struct {
@@ -97,7 +107,18 @@ func (c *ConsoleLogger) Setup() {
 }
 
 // Log logs a message with the given log level, group, message, and additional data.
+// Fields stay on one line. Use LogWith with Expand for a multiline layout.
 func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[string]interface{}) {
+	c.log(level, group, message, v, Options{})
+}
+
+// LogWith logs a message and honors per-call options from With, such as Expand.
+func (c *ConsoleLogger) LogWith(level LogLevel, group string, message string, v map[string]interface{}, opts Options) {
+	c.log(level, group, message, v, opts)
+}
+
+// log is the shared console write path for Log and LogWith.
+func (c *ConsoleLogger) log(level LogLevel, group string, message string, v map[string]interface{}, opts Options) {
 	// Check if the log level is sufficient to log the message.
 	if level < c.args.Level {
 		return // Drop the message if the log level is lower than the configured level.
@@ -120,53 +141,80 @@ func (c *ConsoleLogger) Log(level LogLevel, group string, message string, v map[
 			// slog has no native TRACE level below Debug; use Debug instead.
 			logger.Debug(message, "data", v)
 		} else {
-			log.Printf(color.HiMagentaString("[TRACE]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiMagentaString("[TRACE]"), group, message, v, opts.Expand)
 		}
 	case DEBUG:
 		if c.args.Format == FormatJSON {
 			logger.Debug(message, "data", v)
 		} else {
-			log.Printf(color.HiCyanString("[DEBUG]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiCyanString("[DEBUG]"), group, message, v, opts.Expand)
 		}
 	case INFO:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.HiBlueString("[INFO]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiBlueString("[INFO]"), group, message, v, opts.Expand)
 		}
 	case WARN:
 		if c.args.Format == FormatJSON {
 			logger.Warn(message, "data", v)
 		} else {
-			log.Printf(color.HiYellowString("[WARN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiYellowString("[WARN]"), group, message, v, opts.Expand)
 		}
 	case ERROR:
 		if c.args.Format == FormatJSON {
 			logger.Error(message, "data", v)
 		} else {
-			log.Printf(color.HiRedString("[ERROR]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiRedString("[ERROR]"), group, message, v, opts.Expand)
 		}
 	case FATAL:
 		if c.args.Format == FormatJSON {
 			logger.Error(message, "data", v)
 		} else {
-			log.Printf(color.HiRedString("[FATAL]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiRedString("[FATAL]"), group, message, v, opts.Expand)
 		}
 	default:
 		if c.args.Format == FormatJSON {
 			logger.Info(message, "data", v)
 		} else {
-			log.Printf(color.HiBlueString("[UNKNOWN]")+" %s: %s %v", color.GreenString(group), color.YellowString(message), colorizeMap(v))
+			logText(color.HiBlueString("[UNKNOWN]"), group, message, v, opts.Expand)
 		}
 	}
 }
 
-func colorizeMap(v map[string]interface{}) map[string]interface{} {
-	colorizedMap := make(map[string]interface{})
-	for key, value := range v {
-		colorizedMap[color.HiBlueString(key)] = color.HiBlackString("%v", value)
+// logText writes a text-format console line: colored level, group, message, then
+// the fields from v. Expand puts each field on its own line; otherwise they stay
+// on the same line as the message.
+func logText(level string, group string, message string, v map[string]interface{}, expand bool) {
+	log.Printf("%s %s: %s%s", level, color.GreenString(group), color.YellowString(message), formatFields(v, expand))
+}
+
+// formatFields renders v with gray keys and white values. Keys are sorted so the
+// same payload always prints in the same order. A nil or empty map produces no
+// extra output. When expand is true, each field is on its own indented line.
+func formatFields(v map[string]interface{}, expand bool) string {
+	if len(v) == 0 {
+		return ""
 	}
-	return colorizedMap
+
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var b strings.Builder
+	for _, k := range keys {
+		if expand {
+			b.WriteString("\n  ")
+		} else {
+			b.WriteByte(' ')
+		}
+		b.WriteString(fieldNameColor.Sprintf("%s:", k))
+		b.WriteByte(' ')
+		b.WriteString(fieldValueColor.Sprintf("%v", v[k]))
+	}
+	return b.String()
 }
 
 // Format is the format of the log that is output.
@@ -196,7 +244,8 @@ func NewConsoleLogger(args *NewConsoleLoggerArgs) *CustomLogger {
 	}
 
 	return &CustomLogger{
-		Setup: logger.Setup,
-		Log:   logger.Log,
+		Setup:   logger.Setup,
+		Log:     logger.Log,
+		LogWith: logger.LogWith,
 	}
 }
