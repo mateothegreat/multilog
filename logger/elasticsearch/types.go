@@ -2,6 +2,8 @@ package elasticsearch
 
 import (
 	"regexp"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -35,8 +37,24 @@ type NewElasticsearchLoggerArgs struct {
 }
 
 // ElasticsearchLogger is the logger that sends logs to an elasticsearch cluster.
+//
+// The zero value is not usable; construct one with NewElasticsearchLogger and
+// call Setup before Log. All fields except args and filterPatterns may be
+// mutated after Setup and are guarded as documented on each field.
 type ElasticsearchLogger struct {
 	args           *NewElasticsearchLoggerArgs
 	client         *elasticsearch.Client
 	filterPatterns []*regexp.Regexp
+
+	// healthy is set by Setup on a successful index bootstrap and cleared by
+	// Log when a shipping error is observed. It gates the Index call in Log
+	// so a partitioned cluster does not drown stderr in per-message errors,
+	// and it is set again by reconnect once bootstrap succeeds.
+	healthy atomic.Bool
+
+	// reconnectMu guards reconnecting so at most one background reconnect
+	// goroutine runs at a time regardless of how many Log calls trip the
+	// unhealthy transition concurrently.
+	reconnectMu  sync.Mutex
+	reconnecting bool
 }
